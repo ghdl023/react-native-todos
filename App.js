@@ -73,7 +73,7 @@ export default function App() {
               setTodos(newTodos);
 
               try {
-                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTodos));
+                await AsyncStorage.setItem(STORAGE_KEY_TODOS, JSON.stringify(newTodos));
               } catch(e){
               }
             },
@@ -84,7 +84,10 @@ export default function App() {
   }
 
   const editTodo = (key) => {
-
+    const newTodos = {...todos};
+    newTodos[key].isEdit = true;
+    newTodos[key].editText = newTodos[key].text;
+    setTodos(newTodos);
   }
 
   const onChangeWorking = async (working) => {
@@ -93,6 +96,29 @@ export default function App() {
       await AsyncStorage.setItem(STORAGE_KEY_WORKING, JSON.stringify(working));
     } catch(e){
     }
+  }
+
+
+  const onChangeTodoItemText = (key, text) => {
+    const newTodos = {...todos};
+    newTodos[key].editText = text;
+    setTodos(newTodos);
+  }
+
+
+  const updateTodo = (key) => {
+    const newTodos = {...todos};
+    newTodos[key].text = newTodos[key].editText;
+    delete newTodos[key].editText;
+    newTodos[key].isEdit = false;
+    setTodos(newTodos);
+  }
+
+  const revertTodo = (key) => {
+    const newTodos = {...todos};
+    delete newTodos[key].editText;
+    newTodos[key].isEdit = false;
+    setTodos(newTodos);
   }
 
   return (
@@ -121,15 +147,28 @@ export default function App() {
           }).map((key) =>
               todos[key].working === working ?
                   <View style={styles.todoItem} key={key}>
-                    <Text style={styles.todoItemText}>{ todos[key].text }</Text>
-                    <View style={{flexDirection: 'row',}}>
-                      <TouchableOpacity onPress={() => editTodo(key)}>
-                        <Ionicons name="checkmark" size={30} color="#50FA7B" />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteTodo(key)}>
-                        <Ionicons name="close" size={30} color="white" />
-                      </TouchableOpacity>
-                    </View>
+                    { todos[key].isEdit ?
+                        <TextInput style={styles.todoItemText} onChangeText={(text)=> onChangeTodoItemText(key, text)} onSubmitEditing={()=> updateTodo(key)} onEndEditing={()=> {todos[key].isEdit = false}} value={todos[key].editText} placeholder={ working ? '할 일을 적어주세요.' : '살면서 꼭 하고 싶은 버킷을 적어주세요.'} autoFocus={true}/> :
+                        <Text style={styles.todoItemText}>{ todos[key].text }</Text>
+                    }
+                    { todos[key].isEdit ?
+                        <View style={{flexDirection: 'row',}}>
+                          <TouchableOpacity style={styles.icon} onPress={() => updateTodo(key)}>
+                            <Ionicons name="checkmark" size={30} color="#50FA7B" />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.icon} onPress={() => revertTodo(key)}>
+                            <Ionicons name="close" size={30} color="red" />
+                          </TouchableOpacity>
+                        </View>
+                        : <View style={{flexDirection: 'row',}}>
+                          <TouchableOpacity style={styles.icon} onPress={() => editTodo(key)}>
+                            <Ionicons name="pencil" size={30} color="#515460" />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.icon} onPress={() => deleteTodo(key)}>
+                            <Ionicons name="trash" size={30} color="#515460" />
+                          </TouchableOpacity>
+                        </View>
+                    }
                   </View> : null
           )}
         </ScrollView>
@@ -181,5 +220,8 @@ const styles = StyleSheet.create({
   todoItemText: {
     fontSize: 20,
     color: '#FFFFFF',
+  },
+  icon: {
+    marginRight: 10,
   },
 });
